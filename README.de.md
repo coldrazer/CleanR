@@ -165,22 +165,6 @@ Ein voll ausgestatteter Mac-Reiniger sollte kein Jahresabo kosten und dich nicht
 | **Duplicates** | Progressive Erkennung (Größengruppierung, partielles SHA-256, voller Hash, Inode-Prüfung), plus ein **Konsolidieren**-Modus, der Speicher mit APFS-Copy-on-Write-Klonen zurückgewinnt, ohne eine einzige Kopie zu löschen |
 | **Shredder** | Sicheres Löschen von Dateien mit den Modi Standard, Permanent und Sicheres Überschreiben |
 
-### 📊 Menüleisten-Widget
-
-<p align="center">
-  <img src="assets/menu_bar.png" width="300" alt="CleanR menu bar widget" />
-</p>
-
-Ein Menüleisten-Widget im Glasmorphismus-Stil, das die Vitalwerte deines Macs einen Klick entfernt hält. Es ist ein eigenständiger Prozess, der beim Anmelden startet und aus der Seitenleiste der App umgeschaltet wird, du musst also nie das Hauptfenster öffnen, nur um kurz nachzusehen.
-
-- **Live-Statusringe**: CPU-Last, Speicherdruck, Speicherplatznutzung und Akku in einem 2x2-Ringraster (`host_processor_info`, `vm_statistics64`, APFS-Kapazität, IOKit-Stromquelle), farblich abgestuft von Grün über Gelb bis Rot
-- **Konfigurierbare Anzeige**: zeige freien Speicher, GPU-Auslastung, Speichernutzung oder Akkutemperatur; die Auswahl bleibt erhalten, und nicht verfügbare Sensoren zeigen `--`
-- **Netzwerk, Laufzeit und Swap**: Echtzeit-Durchsatz hoch/runter, System-Laufzeit, Swap-Nutzung
-- **Empfehlungen**: umsetzbare, ausblendbare Tipps ("Benutzer-Caches sind auf 2,52 GB gewachsen, führe System Junk aus"), ein Tipp genügt zum Handeln, nach dem Ausblenden 30 Tage unterdrückt
-- **Schutzstatus**: Zeitpunkt des letzten Malware-Scans und Anzahl der Bedrohungen, farbcodiert nach Aktualität
-- **Verbundene Geräte**: externe Volumes (mit freiem Speicher) und Displays auf einen Blick
-- **Zustandswarnungen**: gedrosselte, optionale Benachrichtigungen, wenn der Speicher kritisch knapp wird oder der Speicherdruck hoch bleibt
-
 ### ⌨️ Tastaturkürzel
 
 | Kürzel | Aktion |
