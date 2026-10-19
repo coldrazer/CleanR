@@ -195,22 +195,6 @@ A full-featured Mac cleaner should not cost a yearly subscription or ask you to 
 | **Duplicates** | Progressive detection (size grouping, partial SHA-256, full hash, inode verification), plus a **Consolidate** mode that reclaims space with APFS copy-on-write clones without deleting a single copy |
 | **Shredder** | Secure file erasure with standard, permanent, and secure-overwrite modes |
 
-### 📊 Menu Bar Widget
-
-<p align="center">
-  <img src="assets/menu_bar.png" width="300" alt="CleanR menu bar widget" />
-</p>
-
-A glassmorphism menu-bar widget that puts your Mac's vitals one click away. It is an independent process that launches at login and is toggled from the app's sidebar, so you never have to open the main window just to check in.
-
-- **Live stat rings**: CPU load, memory pressure, disk usage, and battery in a 2x2 ring grid (`host_processor_info`, `vm_statistics64`, APFS capacity, IOKit power source), color-graded green to amber to red
-- **Configurable readout**: show free disk, GPU usage, memory usage, or battery temperature; the choice persists, and unavailable sensors show `--`
-- **Network, uptime, and swap**: real-time up/down throughput, system uptime, swap usage
-- **Recommendations**: actionable, dismissible tips ("User caches grew to 2.52 GB, run System Junk"), one tap to act, suppressed for 30 days once dismissed
-- **Protection status**: last malware-scan time and threat count, color-coded by freshness
-- **Connected devices**: external volumes (with free space) and displays at a glance
-- **Health alerts**: throttled, opt-in notifications when the disk runs critically low or memory pressure stays high
-
 ### ⌨️ Keyboard shortcuts
 
 | Shortcut | Action |
