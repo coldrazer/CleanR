@@ -21,7 +21,7 @@
   <img src="https://img.shields.io/badge/tests-1048%20passing-brightgreen?style=flat-square" alt="测试" />
   <img src="https://img.shields.io/badge/telemetry-none-brightgreen?style=flat-square" alt="无遥测" />
   <img src="https://img.shields.io/badge/Apple-notarized-black?style=flat-square&logo=apple" alt="已公证" />
-  <img src="https://img.shields.io/badge/license-BSD--3--Clause-green?style=flat-square" alt="许可证" />
+  <img src="https://img.shields.io/badge/license-Strict%20Proprietary-red?style=flat-square" alt="许可证" />
   <img src="https://img.shields.io/badge/PRs-welcome-ff69b4?style=flat-square" alt="欢迎 PR" />
 </p>
 
@@ -47,7 +47,7 @@ brew tap coldrazer/cleanr && brew install --cask cleanr
 
 一款功能完整的 Mac 清理工具，不该收取年度订阅费，也不该让你把对文件的深度访问权限交给一个黑盒。CleanR 把整套工具完全透明地交到你手中。
 
-- **永久免费。** 没有订阅、没有内购、没有“升级到 Pro”、没有弹窗催促。BSD-3 许可证。
+- **永久免费。** 没有订阅、没有内购、没有“升级到 Pro”、没有弹窗催促。Apex Studio LLC 严格专有许可证；禁止出售或分发。
 - **零遥测。** 没有分析统计、没有崩溃上报、没有追踪器、没有可回传的服务器。而且不必只听我们说，你可以[自行验证](#自行验证无遥测)，两条命令即可。
 - **CleanMyMac 的每一项主要工具，集于一身。** 22 个模块，覆盖清理、防护、性能、应用管理和磁盘洞察，外加一个菜单栏小组件。
 - **安全为先。** 优先移入废纸篓、受保护路径黑名单、符号链接与 TOCTOU 防护，以及会校验每一条路径的 `SafetyGuard`。它从设计上就力求绝不丢失你的数据。
@@ -197,7 +197,7 @@ brew tap coldrazer/cleanr && brew install --cask cleanr
 |  | CleanR | CleanMyMac | Pearcleaner | PureMac | OnyX | Mole |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | **价格** | 免费 | $39.95/年 | 免费 | 免费 | 免费 | 免费（命令行） |
-| **开源** | ✅ BSD-3 | ❌ | ✅ Fair-code | ✅ MIT | ❌ | ✅ MIT |
+| **许可证** | 专有 | 专有 | ✅ Fair-code | ✅ MIT | 专有 | ✅ MIT |
 | **遥测** | ❌ 无 | ⚠️ 有 | ❌ 无 | ❌ 无 | ❌ 无 | ❌ 无 |
 | **原生图形应用** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ 命令行（图形界面另售） |
 | **智能扫描（一键）** | ✅ | ✅ | ❌ | ➖ 部分 | ❌ | ➖ 交互式命令行 |
@@ -407,7 +407,7 @@ swift test
 
 ## 许可证
 
-BSD 3-Clause。详见 [LICENSE](LICENSE)。你可以使用、修改和再分发本代码，但须保留版权与许可证文本，且未经许可不得使用“CleanR”名称或贡献者姓名为衍生产品背书。
+**严格专有许可证——禁止出售、禁止分发。** CleanR 由 **Apex Studio LLC** 创建并由 Apex Studio LLC 授权。详见 [LICENSE](LICENSE)。允许将从官方渠道获得的未修改副本用于个人、非商业用途。未经 Apex Studio LLC 事先书面授权，禁止出售、共享或以其他方式分发。第三方组件仍适用其各自的许可证；请参阅 [NOTICE.md](NOTICE.md) 和 [LICENSES/](LICENSES/)。
 
 ## 致谢
 

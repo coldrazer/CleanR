@@ -1,7 +1,10 @@
 # CleanR — Attribution & Notices
 
-CleanR is built on and draws from three open-source projects. Their licenses and
-attributions are preserved below and in the accompanying `LICENSE` files.
+CleanR was created by **Apex Studio LLC** and is licensed by Apex Studio LLC.
+CleanR's own original material is governed by the strict proprietary terms in
+[`LICENSE`](./LICENSE). CleanR is built on and draws from three open-source
+projects. Their licenses and attributions are preserved below and in
+[`LICENSES/`](./LICENSES/).
 
 ## Apex Studio_1 (base codebase) — BSD-3-Clause
 
@@ -10,8 +13,11 @@ Mac cleaner, optimizer, and malware scanner. Its modular Swift package layout
 (`CleanR` app + `CleanRKit` shared engine + `CleanRMenu` menu-bar process), the
 GRDB.swift persistence layer, and the 862-case XCTest suite all derive from it.
 
-- License: **BSD-3-Clause** — see [`LICENSE`](./LICENSE). The original copyright
-  notice in that file is retained as required by the BSD-3-Clause terms.
+- License: **BSD-3-Clause** — see
+  [`LICENSES/MacSai-BSD-3-Clause.txt`](./LICENSES/MacSai-BSD-3-Clause.txt).
+  The original copyright notice is retained as required by the BSD-3-Clause
+  terms. That license applies to the upstream component; it does not make
+  CleanR as a whole open source.
 
 ## Apex Studio_2 (ported features) — MIT
 
@@ -35,8 +41,8 @@ Finder "Uninstall" service integration.
 CleanR's companion CLI behavior — live status dashboard, `purge`, installer-file
 discovery, and safety rules — was **informed by studying** **Apex Studio_3**
 (originally *Mole*), a GPL-3.0 terminal cleaner. **No GPL-3.0 source code is copied,
-ported, or linked into CleanR**; the logic is reimplemented natively in Swift. This
-keeps CleanR permissively licensed.
+ported, or linked into CleanR**; the logic is reimplemented natively in Swift.
+CleanR's own contributions are proprietary and are not open-source licensed.
 
 - License: **GPL-3.0** — acknowledged as design inspiration only; no code shared.
 

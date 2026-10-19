@@ -5,8 +5,8 @@
 <h1 align="center">CleanR</h1>
 
 <p align="center">
-  <strong>The open-source Mac cleaner, optimizer, and malware scanner.</strong><br>
-  A free, Apple-notarized alternative to CleanMyMac, built with Swift 6 and SwiftUI.
+  <strong>The source-available Mac cleaner, optimizer, and malware scanner.</strong><br>
+  Created and licensed by <strong>Apex Studio LLC</strong>. A proprietary, no-cost-for-personal-use alternative to CleanMyMac, built with Swift 6 and SwiftUI.
 </p>
 
 <p align="center">
@@ -18,15 +18,18 @@
   <a href="https://github.com/coldrazer/CleanR/releases/latest"><img src="https://img.shields.io/github/v/release/coldrazer/CleanR?style=flat-square&color=blue" alt="Latest release" /></a>
   <img src="https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey?style=flat-square" alt="macOS 14+" />
   <img src="https://img.shields.io/badge/swift-6.0-orange?style=flat-square" alt="Swift 6" />
-  <img src="https://img.shields.io/badge/tests-1088%20passing-brightgreen?style=flat-square" alt="Tests" />
+  <img src="https://img.shields.io/badge/tests-715%20passing-brightgreen?style=flat-square" alt="Tests" />
   <img src="https://img.shields.io/badge/telemetry-none-brightgreen?style=flat-square" alt="No telemetry" />
   <img src="https://img.shields.io/badge/Apple-notarized-black?style=flat-square&logo=apple" alt="Notarized" />
-  <img src="https://img.shields.io/badge/license-BSD--3--Clause-green?style=flat-square" alt="License" />
-  <img src="https://img.shields.io/badge/PRs-welcome-ff69b4?style=flat-square" alt="PRs Welcome" />
+  <img src="https://img.shields.io/badge/license-Strict%20Proprietary-red?style=flat-square" alt="License: Strict Proprietary — no sale or distribution" />
 </p>
 
 <p align="center">
-  <img src="assets/demo.png" width="720" alt="CleanR Screenshot" />
+  <img src="assets/screenshots/smart-scan.png" width="860" alt="CleanR Smart Scan — one click checks cleanup, protection, performance, apps, and files" />
+</p>
+
+<p align="center">
+  <a href="#screenshots">Screenshots</a> · <a href="#features-at-a-glance">Features</a> · <a href="#installation">Installation</a> · <a href="#how-cleanr-compares">Comparison</a> · <a href="#architecture">Architecture</a> · <a href="#contributing">Contributing</a>
 </p>
 
 <p align="center">
@@ -45,13 +48,40 @@ brew tap coldrazer/cleanr && brew install --cask cleanr
 
 ## Why CleanR?
 
-A full-featured Mac cleaner should not cost a yearly subscription or ask you to trust a black box with deep access to your files. CleanR gives you the whole toolkit, in the open.
+A full-featured Mac cleaner should not cost a yearly subscription or ask you to trust a black box with deep access to your files. CleanR gives you the whole toolkit with source available for inspection.
 
-- **Free, forever.** No subscription, no in-app purchases, no "upgrade to Pro", no nag screens. BSD-3 licensed.
+- **No cost for personal use.** No subscription, no in-app purchases, no "upgrade to Pro", no nag screens. Strict proprietary license: CleanR may not be sold or redistributed.
 - **Zero telemetry.** No analytics, no crash reporter, no trackers, no server to phone home to. And you do not have to take our word for it, [verify it yourself](#verify-no-telemetry-yourself) in two commands.
 - **Every major CleanMyMac tool, in one app.** 22 modules across cleanup, protection, performance, applications, and disk insight, plus a menu-bar widget.
 - **Safe by design.** Trash-first deletion, a protected-paths blocklist, symlink and TOCTOU guards, and a `SafetyGuard` that validates every path. It is built to never lose your data.
-- **Apple-notarized and fully open source.** Your Mac verifies the signature every launch, and every line is here to read.
+- **Signed builds and inspectable source.** Official signed builds are verified by your Mac at launch, and the source is available to audit under the strict license terms.
+
+---
+
+## Screenshots
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<img src="assets/screenshots/smart-scan.png" alt="Smart Scan" />
+<p align="center"><strong>Smart Scan</strong> — one click checks junk, threats, performance, apps, and large files before anything is touched.</p>
+</td>
+<td width="50%" valign="top">
+<img src="assets/screenshots/system-junk.png" alt="System Junk" />
+<p align="center"><strong>System Junk</strong> — caches, logs, language files, and other reclaimable space, reviewed item by item.</p>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<img src="assets/screenshots/maintenance.png" alt="Maintenance" />
+<p align="center"><strong>Maintenance</strong> — built-in macOS upkeep tasks, with advanced tasks clearly marked before they run.</p>
+</td>
+<td width="50%" valign="top">
+<img src="assets/screenshots/settings.png" alt="Settings" />
+<p align="center"><strong>Settings</strong> — appearance, language, menu-bar widget, and exclusions. No account, no telemetry toggles to hunt for.</p>
+</td>
+</tr>
+</table>
 
 ---
 
@@ -197,7 +227,7 @@ A glassmorphism menu-bar widget that puts your Mac's vitals one click away. It i
 |  | CleanR | CleanMyMac | Pearcleaner | PureMac | OnyX | Mole |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | **Price** | Free | $39.95/yr | Free | Free | Free | Free (CLI) |
-| **Open source** | ✅ BSD-3 | ❌ | ✅ Fair-code | ✅ MIT | ❌ | ✅ MIT |
+| **License** | Proprietary | Proprietary | ✅ Fair-code | ✅ MIT | Proprietary | ✅ MIT |
 | **Telemetry** | ❌ None | ⚠️ Yes | ❌ None | ❌ None | ❌ None | ❌ None |
 | **Native GUI app** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ CLI (paid GUI separate) |
 | **Smart Scan (one-click)** | ✅ | ✅ | ❌ | ➖ Partial | ❌ | ➖ Interactive CLI |
@@ -213,7 +243,7 @@ A glassmorphism menu-bar widget that puts your Mac's vitals one click away. It i
 | **Notarized by Apple** | ✅ | ✅ | ✅ | ✅ | ✅ | N/A |
 | **macOS version** | 14+ | 13+ | 13+ | 13+ | varies | varies |
 
-> CleanMyMac is a great product, and the people who want a polished, supported experience should happily pay for it. CleanR is for everyone who would rather have transparent source code and zero subscription.
+> CleanMyMac is a great product, and the people who want a polished, supported experience should happily pay for it. CleanR is for everyone who would rather inspect the source and pay no subscription.
 
 ---
 
@@ -305,7 +335,7 @@ CleanR is code-signed with an Apple **Developer ID** and **notarized by Apple**.
 - **It is provably from us.** The signature is tied to our Apple Developer identity, so no one else can ship something your Mac accepts as CleanR.
 - **It just works.** No Gatekeeper warnings, no right-click-to-open, no Terminal.
 
-Put together with a fully open source, this is a chain of trust you do not take on faith: the code is public, we sign every release, Apple verifies it, and your Mac re-checks the seal every time you open the app.
+Put together with source available for inspection, this is a chain of trust you do not take on faith: you can inspect the code, Apex Studio LLC signs official releases, Apple verifies them, and your Mac re-checks the seal every time you open the app.
 
 ### Verify no telemetry yourself
 
@@ -396,24 +426,32 @@ CleanR is designed to **never cause data loss**:
 swift test
 ```
 
-The XCTest suite has **1,088 tests** and treats `SafetyGuard` and `CleaningEngine` (the death-and-life files) as must-be-perfect: adversarial coverage of symlinks, path traversal, NULL bytes, SIP, protected apps, file-count caps, TOCTOU, and idempotence, plus integration coverage of dry-run / trash / permanent cleaning, the scan state machine, every System Junk category, the treemap math, the uninstaller matching engine, duplicate detection, appcast parsing, and full end-to-end fixture-to-clean cycles. Fixtures (`withTempHome`, `withFakeApp`, `withFakePlist`) keep every test off your real home directory.
+The XCTest suite has **715 tests** and treats `SafetyGuard` and `CleaningEngine` (the death-and-life files) as must-be-perfect: adversarial coverage of symlinks, path traversal, NULL bytes, SIP, protected apps, file-count caps, TOCTOU, and idempotence, plus integration coverage of dry-run / trash / permanent cleaning, the scan state machine, every System Junk category, the treemap math, the uninstaller matching engine, duplicate detection, appcast parsing, and full end-to-end fixture-to-clean cycles. Fixtures (`withTempHome`, `withFakeApp`, `withFakePlist`) keep every test off your real home directory.
 
 ---
 
 ## Contributing
 
-Contributions are very welcome. Read the [Contributing Guidelines](CONTRIBUTING.md), then:
-
-1. Fork the repo and create a feature branch
-2. Make your change (one focused change per PR keeps review easy)
-3. Run `swift test`
-4. Open a Pull Request
-
-There is also an open [feature vote](https://github.com/coldrazer/CleanR/issues/55): 👍 the tools you want built next.
+CleanR is proprietary software created and licensed by **Apex Studio LLC**.
+External contributions are accepted only when Apex Studio LLC has agreed in
+writing in advance. Do not fork, copy, modify, or redistribute CleanR in order
+to prepare a contribution. If Apex Studio LLC invites a contribution, the
+contributor must agree that Apex Studio LLC may use and license the
+contribution as part of CleanR under the terms stated in [LICENSE](LICENSE).
 
 ## License
 
-BSD 3-Clause. See [LICENSE](LICENSE). You may use, modify, and redistribute the code, provided you keep the copyright and license text and do not use the "CleanR" name or contributors' names to endorse derived products without permission.
+**Strict Proprietary — no sale, no distribution.**
+
+CleanR was created by **Apex Studio LLC** and is licensed by Apex Studio LLC.
+See [LICENSE](LICENSE). Personal, non-commercial use of an unmodified copy
+obtained from an official Apex Studio LLC channel is permitted. Selling,
+sublicensing, sharing, publishing, mirroring, redistributing, or otherwise
+distributing CleanR is prohibited without prior written authorization from
+Apex Studio LLC.
+
+Third-party components remain under their own licenses. See
+[NOTICE.md](NOTICE.md) and the license texts in [LICENSES/](LICENSES/).
 
 ## Acknowledgments
 

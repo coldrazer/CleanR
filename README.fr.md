@@ -21,7 +21,7 @@
   <img src="https://img.shields.io/badge/tests-1048%20passing-brightgreen?style=flat-square" alt="Tests" />
   <img src="https://img.shields.io/badge/telemetry-none-brightgreen?style=flat-square" alt="No telemetry" />
   <img src="https://img.shields.io/badge/Apple-notarized-black?style=flat-square&logo=apple" alt="Notarized" />
-  <img src="https://img.shields.io/badge/license-BSD--3--Clause-green?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/license-Strict%20Proprietary-red?style=flat-square" alt="License" />
   <img src="https://img.shields.io/badge/PRs-welcome-ff69b4?style=flat-square" alt="PRs Welcome" />
 </p>
 
@@ -47,7 +47,7 @@ brew tap coldrazer/cleanr && brew install --cask cleanr
 
 Un nettoyeur Mac complet ne devrait pas coûter un abonnement annuel ni vous demander de faire confiance à une boîte noire disposant d'un accès étendu à vos fichiers. CleanR vous offre toute la boîte à outils, à découvert.
 
-- **Gratuit, pour toujours.** Pas d'abonnement, pas d'achats intégrés, pas de « passage à Pro », pas de fenêtres insistantes. Sous licence BSD-3.
+- **Gratuit, pour toujours.** Pas d'abonnement, pas d'achats intégrés, pas de « passage à Pro », pas de fenêtres insistantes. Sous licence propriétaire stricte d'Apex Studio LLC ; vente et redistribution interdites.
 - **Zéro télémétrie.** Pas d'analytique, pas de rapport de plantage, pas de traqueurs, aucun serveur où téléphoner. Et vous n'avez pas à nous croire sur parole, [vérifiez-le vous-même](#vérifiez-labsence-de-télémétrie-vous-même) en deux commandes.
 - **Chaque outil majeur de CleanMyMac, dans une seule app.** 22 modules couvrant le nettoyage, la protection, les performances, les applications et l'analyse du disque, plus un widget dans la barre des menus.
 - **Sûr par conception.** Suppression d'abord vers la corbeille, une liste de chemins protégés, des protections contre les liens symboliques et TOCTOU, et un `SafetyGuard` qui valide chaque chemin. Conçu pour ne jamais perdre vos données.
@@ -197,7 +197,7 @@ Un widget de barre des menus au style glassmorphisme qui met les constantes vita
 |  | CleanR | CleanMyMac | Pearcleaner | PureMac | OnyX | Mole |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | **Prix** | Gratuit | 39,95 $/an | Gratuit | Gratuit | Gratuit | Gratuit (CLI) |
-| **Open source** | ✅ BSD-3 | ❌ | ✅ Fair-code | ✅ MIT | ❌ | ✅ MIT |
+| **Licence** | Propriétaire | Propriétaire | ✅ Fair-code | ✅ MIT | Propriétaire | ✅ MIT |
 | **Télémétrie** | ❌ Aucune | ⚠️ Oui | ❌ Aucune | ❌ Aucune | ❌ Aucune | ❌ Aucune |
 | **App GUI native** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ CLI (GUI payante séparée) |
 | **Smart Scan (un clic)** | ✅ | ✅ | ❌ | ➖ Partiel | ❌ | ➖ CLI interactive |
@@ -411,7 +411,7 @@ Il y a aussi un [vote de fonctionnalités](https://github.com/coldrazer/CleanR/i
 
 ## Licence
 
-BSD 3-Clause. Voir [LICENSE](LICENSE). Vous pouvez utiliser, modifier et redistribuer le code, à condition de conserver le texte de copyright et de licence et de ne pas utiliser le nom « CleanR » ni les noms des contributeurs pour promouvoir des produits dérivés sans autorisation.
+**Licence propriétaire stricte — aucune vente, aucune distribution.** CleanR a été créé par **Apex Studio LLC** et est concédé sous licence par Apex Studio LLC. Voir [LICENSE](LICENSE). L'utilisation personnelle et non commerciale d'une copie inchangée obtenue par un canal officiel est autorisée. La vente, le partage et toute autre distribution sans l'autorisation écrite préalable d'Apex Studio LLC sont interdits. Les composants tiers restent régis par leurs propres licences ; voir [NOTICE.md](NOTICE.md) et [LICENSES/](LICENSES/).
 
 ## Remerciements
 

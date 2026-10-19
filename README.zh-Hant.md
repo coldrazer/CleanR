@@ -21,7 +21,7 @@
   <img src="https://img.shields.io/badge/tests-1048%20passing-brightgreen?style=flat-square" alt="測試" />
   <img src="https://img.shields.io/badge/telemetry-none-brightgreen?style=flat-square" alt="無遙測" />
   <img src="https://img.shields.io/badge/Apple-notarized-black?style=flat-square&logo=apple" alt="已公證" />
-  <img src="https://img.shields.io/badge/license-BSD--3--Clause-green?style=flat-square" alt="許可證" />
+  <img src="https://img.shields.io/badge/license-Strict%20Proprietary-red?style=flat-square" alt="許可證" />
   <img src="https://img.shields.io/badge/PRs-welcome-ff69b4?style=flat-square" alt="歡迎 PR" />
 </p>
 
@@ -47,7 +47,7 @@ brew tap coldrazer/cleanr && brew install --cask cleanr
 
 一款功能完整的 Mac 清理工具，不該收取年度訂閱費，也不該讓你把對檔案的深度訪問權限交給一個黑盒。CleanR 把整套工具完全透明地交到你手中。
 
-- **永久免費。** 沒有訂閱、沒有內購、沒有“升級到 Pro”、沒有彈窗催促。BSD-3 許可證。
+- **永久免費。** 沒有訂閱、沒有內購、沒有“升級到 Pro”、沒有彈窗催促。Apex Studio LLC 嚴格專有許可證；禁止出售或分發。
 - **零遙測。** 沒有分析統計、沒有崩潰上報、沒有追蹤器、沒有可回傳的伺服器。而且不必只聽我們說，你可以[自行驗證](#自行驗證無遙測)，兩條命令即可。
 - **CleanMyMac 的每一項主要工具，集於一身。** 22 個模組，覆蓋清理、防護、效能、應用管理和磁碟洞察，外加一個選單欄小元件。
 - **安全為先。** 優先移入廢紙簍、受保護路徑黑名單、符號連結與 TOCTOU 防護，以及會校驗每一條路徑的 `SafetyGuard`。它從設計上就力求絕不丟失你的資料。
@@ -197,7 +197,7 @@ brew tap coldrazer/cleanr && brew install --cask cleanr
 |  | CleanR | CleanMyMac | Pearcleaner | PureMac | OnyX | Mole |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | **價格** | 免費 | $39.95/年 | 免費 | 免費 | 免費 | 免費（命令列） |
-| **開源** | ✅ BSD-3 | ❌ | ✅ Fair-code | ✅ MIT | ❌ | ✅ MIT |
+| **許可證** | 專有 | 專有 | ✅ Fair-code | ✅ MIT | 專有 | ✅ MIT |
 | **遙測** | ❌ 無 | ⚠️ 有 | ❌ 無 | ❌ 無 | ❌ 無 | ❌ 無 |
 | **原生圖形應用** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ 命令列（圖形介面另售） |
 | **智慧掃描（一鍵）** | ✅ | ✅ | ❌ | ➖ 部分 | ❌ | ➖ 互動式命令列 |
@@ -407,7 +407,7 @@ swift test
 
 ## 許可證
 
-BSD 3-Clause。詳見 [LICENSE](LICENSE)。你可以使用、修改和再分發本程式碼，但須保留版權與許可證文字，且未經許可不得使用“CleanR”名稱或貢獻者姓名為衍生產品背書。
+**嚴格專有許可證——禁止出售、禁止分發。** CleanR 由 **Apex Studio LLC** 建立並由 Apex Studio LLC 授權。詳見 [LICENSE](LICENSE)。允許將從官方渠道獲得的未修改副本用於個人、非商業用途。未經 Apex Studio LLC 事先書面授權，禁止出售、共享或以其他方式分發。第三方元件仍適用其各自的許可證；請參閱 [NOTICE.md](NOTICE.md) 和 [LICENSES/](LICENSES/)。
 
 ## 致謝
 

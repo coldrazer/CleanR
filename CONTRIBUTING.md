@@ -1,6 +1,8 @@
 # Contributing to CleanR
 
-Thank you for your interest in contributing! CleanR is a community-driven project and we welcome contributions of all kinds — bug fixes, new features, documentation improvements, and more.
+CleanR was created by Apex Studio LLC and is strict proprietary software. It is
+not an open-source or community-driven project. External contributions are
+accepted only by prior written invitation from Apex Studio LLC.
 
 ## Code of Conduct
 
@@ -8,11 +10,17 @@ Be respectful, constructive, and inclusive. We're building software together.
 
 ## Getting Started
 
-1. **Fork** the repository
-2. **Clone** your fork: `git clone https://github.com/YOUR_USERNAME/CleanR.git`
-3. **Build**: `swift build`
-4. **Run tests**: `swift test` (must pass with 0 failures)
-5. **Create a branch**: `git checkout -b feature/your-feature`
+Only contributors expressly invited in writing by Apex Studio LLC may prepare
+a contribution. The invitation will identify the permitted repository access,
+branch, and submission method. Do not fork, copy, modify, or redistribute
+CleanR to prepare a contribution without that invitation.
+
+For an invited contribution:
+
+1. Use the repository access identified by Apex Studio LLC.
+2. **Build**: `swift build`
+3. **Run tests**: `swift test` (must pass with 0 failures)
+4. Use the branch and submission method specified in the invitation.
 
 ## Pull Request Guidelines
 

@@ -65,7 +65,7 @@ cp "$CASK_SOURCE" "${TMP}/Casks/cleanr.rb"
 cat > "${TMP}/README.md" <<EOF
 # homebrew-cleanr
 
-Homebrew tap for [CleanR](https://github.com/${OWNER}/CleanR), the open-source Mac cleaner.
+Homebrew tap for [CleanR](https://github.com/${OWNER}/CleanR), the proprietary Mac cleaner created and licensed by Apex Studio LLC.
 
 ## Install
 
