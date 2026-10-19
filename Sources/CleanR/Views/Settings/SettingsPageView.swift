@@ -32,6 +32,7 @@ struct SettingsPageView: View {
     @State private var languageSearch: String = ""
     @State private var excludedFolders: [String] = FolderExclusionPreferences.paths
     @State private var exclusionError: String?
+    @State private var fullDiskAccessGranted = false
 
     /// Selectable languages filtered by the search field (case-insensitive).
     private var filteredLanguages: [(name: String, lprojs: [String])] {
@@ -43,6 +44,7 @@ struct SettingsPageView: View {
         Form {
             headerSection
             generalSection
+            permissionsSection
             interfaceLanguageSection
             appearanceSection
             languageSection
@@ -54,6 +56,7 @@ struct SettingsPageView: View {
         .frame(maxWidth: 680)
         .frame(maxWidth: .infinity)
         .onAppear {
+            fullDiskAccessGranted = PermissionManager.shared.hasFullDiskAccess()
             launchAtLogin = loginLauncher.refreshStatus()
             keptLanguages = LanguagePreferences.userKept
             selectable = LanguagePreferences.selectableLanguages()
@@ -269,6 +272,35 @@ struct SettingsPageView: View {
         }
     }
 
+    // MARK: - Permissions (health check)
+
+    private var permissionsSection: some View {
+        Section(L10n.tr("权限", "Permissions", "Разрешения")) {
+            HStack(spacing: 10) {
+                Image(systemName: fullDiskAccessGranted ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
+                    .foregroundStyle(fullDiskAccessGranted ? .green : .orange)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.tr("完全磁盘访问权限", "Full Disk Access", "Полный доступ к диску"))
+                    Text(fullDiskAccessGranted
+                         ? L10n.tr("已授予——所有模块都可以完整扫描。", "Granted — every module can scan completely.", "Предоставлен — все модули могут сканировать полностью.")
+                         : L10n.tr("未授予——部分位置会被 macOS 拦截，扫描结果可能不完整。", "Not granted — macOS blocks some locations, so scans may be incomplete.", "Не предоставлен — macOS блокирует часть расположений, поэтому сканирование может быть неполным."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button(L10n.tr("重新检查", "Recheck", "Проверить снова")) {
+                    fullDiskAccessGranted = PermissionManager.shared.hasFullDiskAccess()
+                }
+                if !fullDiskAccessGranted {
+                    Button(L10n.tr("打开设置", "Open Settings", "Открыть настройки")) {
+                        PermissionManager.shared.openFullDiskAccessSettings()
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+        }
+    }
+
     // MARK: - Interface Language
 
     private var interfaceLanguageSection: some View {
@@ -476,6 +508,27 @@ struct SettingsPageView: View {
 
     private var aboutSection: some View {
         Section(L10n.tr("关于", "About", "О программе")) {
+            Button {
+                DiagnosticsExporter.export()
+            } label: {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle().fill(Color.blue.opacity(0.18)).frame(width: 32, height: 32)
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.blue)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.tr("导出诊断信息", "Export Diagnostics", "Экспорт диагностики"))
+                            .foregroundStyle(.primary)
+                        Text(L10n.tr("保存一份已隐藏主目录路径的报告，用于反馈问题。不会自动发送任何内容。", "Save a report with home paths redacted, for bug reports. Nothing is sent automatically.", "Сохранить отчёт со скрытыми путями домашней папки для сообщений об ошибках. Автоматически ничего не отправляется."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+            }
+            .buttonStyle(.plain)
             aboutRow(icon: "chevron.left.forwardslash.chevron.right", tint: .orange,
                      title: L10n.tr("源代码", "Source code", "Исходный код"), caption: L10n.tr("在 GitHub 上浏览代码库", "Browse the codebase on GitHub", "Открыть репозиторий на GitHub"),
                      url: MCConstants.repoURL)

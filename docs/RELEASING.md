@@ -55,6 +55,28 @@ secret**.
    `coldrazer/homebrew-cleanr` with the new version and the DMG's SHA-256.
 5. Deletes the ephemeral keychain (runs even if earlier steps fail).
 
+## Beta channel (required before every stable)
+
+A stable tag must never be the first build that runs on real machines.
+One week before a stable release:
+
+1. Tag a prerelease from the release candidate commit:
+   `git tag vX.Y.Z-beta.1 && git push origin vX.Y.Z-beta.1`
+   The hyphen makes the pipeline publish a GitHub **pre-release**: it is
+   excluded from `/releases/latest`, in-app update checks, and Homebrew.
+2. Install the beta DMG on the test matrix: Apple silicon + Intel,
+   the oldest supported macOS (14) and the newest, one machine without
+   Full Disk Access, one in Dark Mode, one with a >100k-file home folder.
+3. Exercise the golden paths per machine: Smart Scan end-to-end, one
+   permanent Trash empty (confirm the explicit warning), one Clean
+   History restore, menu-bar widget overnight, update check.
+4. Fix findings on `main`, then cut `-beta.2` if anything user-visible
+   changed. Only when a beta has soaked unchanged for 7 days, tag the
+   stable `vX.Y.Z` (it must match the `VERSION` file).
+5. After the stable release publishes, run
+   `scripts/verify-release.sh` to confirm the GitHub asset, Homebrew
+   cask, and update endpoints agree (the pipeline also runs it).
+
 ## Building a notarized DMG locally
 
 ```bash

@@ -72,5 +72,8 @@ public struct SizeDisplay: View {
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }
+        // One VoiceOver element ("2.4 GB cleaned up"), not three fragments.
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(parts.value) \(parts.unit) \(label)")
     }
 }

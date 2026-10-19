@@ -290,6 +290,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # What users actually download must agree with what we think we
+      # shipped: release asset present, tag == VERSION, update endpoint
+      # live. Runs after Create release; tap check inside is best-effort.
+      - name: Verify published release
+        if: steps.version.outputs.prerelease != 'true'
+        run: bash scripts/verify-release.sh "${{ steps.version.outputs.tag }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Update Homebrew cask in tap repo
         if: steps.version.outputs.prerelease != 'true'
         run: |

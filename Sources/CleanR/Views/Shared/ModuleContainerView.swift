@@ -112,6 +112,12 @@ struct ModuleContainerView: View {
         selectedItems.count
     }
 
+    /// Permanent (already-in-Trash) vs recoverable split of the selection,
+    /// so confirmations never promise recovery for permanent deletes.
+    private var safetySummary: CleanSafetySummary {
+        results.safetySummary(selectedItems: selectedItems)
+    }
+
     private var formattedSelectedSize: String {
         ByteCountFormatter.string(fromByteCount: Int64(totalSelected), countStyle: .file)
     }
@@ -307,9 +313,11 @@ struct ModuleContainerView: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
-                    Text(L10n.tr("已选择 \(selectedCount) 项", "\(selectedCount) selected", "Выбрано: \(selectedCount)"))
+                    Text(safetySummary.permanentCount > 0
+                         ? L10n.tr("已选择 \(selectedCount) 项 · 其中 \(safetySummary.permanentCount) 项将永久删除", "\(selectedCount) selected · \(safetySummary.permanentCount) permanent", "Выбрано: \(selectedCount) · безвозвратно: \(safetySummary.permanentCount)")
+                         : L10n.tr("已选择 \(selectedCount) 项", "\(selectedCount) selected", "Выбрано: \(selectedCount)"))
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(safetySummary.permanentCount > 0 ? .orange : .secondary)
                 }
                 Spacer()
                 SizeDisplay(size: totalSelected, label: L10n.tr("已选择"))
@@ -318,7 +326,9 @@ struct ModuleContainerView: View {
                     if confirmEmptyTrash {
                         // Trash Bins: permanent + irreversible — always confirm.
                         showEmptyTrashConfirm = true
-                    } else if selectedCount > MCConstants.cleanConfirmationThreshold {
+                    } else if safetySummary.requiresExplicitConfirmation || selectedCount > MCConstants.cleanConfirmationThreshold {
+                        // Any permanent (already-in-Trash) item in the
+                        // selection confirms explicitly, at any size.
                         showLargeSelectionConfirm = true
                     } else {
                         onClean()
@@ -345,7 +355,9 @@ struct ModuleContainerView: View {
                         Button(L10n.tr("取消", "Cancel", "Отмена"), role: .cancel) { }
                         Button(L10n.tr("继续", "Continue", "Продолжить"), role: .destructive) { onClean() }
                     } message: {
-                        Text(L10n.tr("约 \(formattedSelectedSize) 数据，可能需要几分钟。清理过程中可以取消。", "That's about \(formattedSelectedSize) of data and may take several minutes. You can cancel mid-cleanup.", "Объём данных — около \(formattedSelectedSize). Операция может занять несколько минут, но её можно отменить."))
+                        Text(safetySummary.permanentCount > 0
+                             ? L10n.tr("其中 \(safetySummary.permanentCount) 项已在废纸篓中，将被永久删除，无法恢复。其余约 \(formattedSelectedSize) 会移到废纸篓。", "\(safetySummary.permanentCount) item(s) are already in the Trash and will be deleted permanently — this cannot be undone. The rest (about \(formattedSelectedSize)) moves to the Trash.", "\(safetySummary.permanentCount) уже в Корзине и будет удалено безвозвратно. Остальное (около \(formattedSelectedSize)) переместится в Корзину.")
+                             : L10n.tr("约 \(formattedSelectedSize) 数据，可能需要几分钟。清理过程中可以取消。", "That's about \(formattedSelectedSize) of data and may take several minutes. You can cancel mid-cleanup.", "Объём данных — около \(formattedSelectedSize). Операция может занять несколько минут, но её можно отменить."))
                     }
                     // Trash Bins empties ~/.Trash permanently — there is no
                     // recovery, so this confirmation fires on every Empty
