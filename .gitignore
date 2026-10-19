@@ -21,7 +21,9 @@ build/
 # Swift Package Manager
 .build/
 .swiftpm/
-Package.resolved
+# Package.resolved is committed on purpose: app lockfiles must be tracked
+# so Xcode (and Xcode Cloud, which disables automatic resolution) resolves
+# the exact pinned dependencies — notably GRDB — on every machine.
 
 # macOS
 .DS_Store
