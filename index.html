@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CleanR — The Mac cleaner that respects your Mac</title>
+<meta name="description" content="CleanR is a free-for-personal-use Mac cleaner, optimizer, and malware scanner by Apex Studio LLC. 22 modules, zero telemetry, Trash-first safety.">
+<link rel="icon" type="image/png" href="assets/app_icon.png">
+<style>
+  :root{
+    --ink:#131e2a; --ink-2:#43536a; --ink-3:#71809a;
+    --bg:#f4f6f9; --surface:#ffffff; --line:#dde4ee;
+    --accent:#2f62a3; --accent-deep:#1f4d84; --teal:#14708a;
+    --radius:14px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px}
+
+  /* Nav */
+  nav{
+    position:sticky; top:0; z-index:20;
+    background:rgba(244,246,249,.88); backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-in{display:flex; align-items:center; gap:14px; height:62px}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:700; font-size:17px; color:var(--ink)}
+  .brand img{width:32px; height:32px; border-radius:8px}
+  .brand:hover{text-decoration:none}
+  .nav-links{display:flex; gap:26px; margin-left:28px; font-size:14px}
+  .nav-links a{color:var(--ink-2)}
+  .spacer{flex:1}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:14px; font-weight:600; padding:9px 18px; border-radius:9px;
+    border:1px solid transparent; cursor:pointer;
+  }
+  .btn:hover{text-decoration:none}
+  .btn-dark{background:var(--ink); color:#fff}
+  .btn-dark:hover{background:#243447}
+  .btn-accent{background:var(--accent); color:#fff}
+  .btn-accent:hover{background:var(--accent-deep)}
+  .btn-ghost{background:transparent; color:var(--ink); border-color:#c4cfdf}
+  .btn-ghost:hover{background:#eaf0f7}
+
+  /* Hero */
+  header{padding:72px 0 30px}
+  .hero-grid{display:grid; grid-template-columns:1.05fr 1.35fr; gap:48px; align-items:center}
+  .eyebrow{
+    display:inline-block; font-size:12.5px; font-weight:600; letter-spacing:.04em;
+    color:var(--teal); background:#e2eff3; padding:5px 12px; border-radius:999px; margin-bottom:20px;
+  }
+  h1{font-size:46px; line-height:1.12; letter-spacing:-.02em; font-weight:800}
+  h1 .thin{display:block; font-weight:600; color:var(--ink-2); font-size:24px; letter-spacing:-.01em; margin-top:12px; line-height:1.35}
+  .hero-sub{font-size:16.5px; color:var(--ink-2); margin:20px 0 28px; max-width:46ch}
+  .hero-cta{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+  .hero-note{font-size:13px; color:var(--ink-3); margin-top:14px}
+  .shot-frame{
+    background:var(--surface); border:1px solid var(--line); border-radius:18px;
+    padding:10px; box-shadow:0 24px 60px rgba(19,30,42,.18);
+  }
+  .shot-frame img{width:100%; display:block; border-radius:10px}
+  .stats{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line);
+    border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin:54px 0 8px;
+  }
+  .stat{background:var(--surface); padding:20px 22px}
+  .stat b{display:block; font-size:26px; letter-spacing:-.01em}
+  .stat span{font-size:13px; color:var(--ink-2)}
+
+  section{padding:64px 0 8px}
+  h2{font-size:30px; letter-spacing:-.02em; font-weight:750; margin-bottom:10px}
+  .section-sub{color:var(--ink-2); font-size:16px; max-width:62ch; margin-bottom:34px}
+
+  /* Feature rows — varied, not a uniform card grid */
+  .frow{
+    display:grid; grid-template-columns:210px 1fr; gap:28px;
+    padding:26px 0; border-top:1px solid var(--line);
+  }
+  .frow:last-of-type{border-bottom:1px solid var(--line)}
+  .frow h3{font-size:17px; display:flex; align-items:center; gap:10px}
+  .dot{width:10px; height:10px; border-radius:3px; flex:none}
+  .frow p{color:var(--ink-2); font-size:15px}
+  .frow p b{color:var(--ink); font-weight:600}
+
+  /* Screenshots */
+  .gallery{display:grid; grid-template-columns:1fr 1fr; gap:22px}
+  figure{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:10px}
+  figure img{width:100%; display:block; border-radius:8px}
+  figcaption{font-size:13.5px; color:var(--ink-2); padding:12px 6px 6px}
+  figcaption b{color:var(--ink)}
+
+  /* Safety band */
+  .band{
+    background:var(--ink); color:#e8eef6; border-radius:18px;
+    padding:44px 46px; display:grid; grid-template-columns:1fr 1fr; gap:40px;
+  }
+  .band h2{color:#fff}
+  .band p{color:#b9c6d8; font-size:15px}
+  .band ul{list-style:none}
+  .band li{padding:11px 0 11px 30px; position:relative; border-bottom:1px solid #26374c; font-size:15px; color:#dbe5f1}
+  .band li:last-child{border-bottom:0}
+  .band li::before{content:"✓"; position:absolute; left:2px; color:#57c48d; font-weight:700}
+
+  /* Install */
+  .install-grid{display:grid; grid-template-columns:1.2fr .8fr; gap:22px; align-items:stretch}
+  .codebox{
+    background:#0d1622; color:#dce7f5; border-radius:var(--radius);
+    padding:22px 24px; font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:14px;
+    display:flex; align-items:center; gap:14px;
+  }
+  .codebox code{flex:1; overflow-x:auto; white-space:nowrap}
+  .copy-btn{
+    background:#1d2f47; color:#dce7f5; border:1px solid #33496a; border-radius:7px;
+    font-size:12.5px; padding:7px 13px; cursor:pointer; flex:none;
+  }
+  .copy-btn:hover{background:#273c5c}
+  .req{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px}
+  .req h3{font-size:15px; margin-bottom:10px}
+  .req li{font-size:14px; color:var(--ink-2); margin:7px 0 7px 18px}
+
+  footer{border-top:1px solid var(--line); margin-top:72px; padding:34px 0 44px; color:var(--ink-3); font-size:13.5px}
+  .foot-in{display:flex; gap:18px; align-items:center; flex-wrap:wrap}
+  .foot-in img{width:26px; height:26px; border-radius:6px}
+
+  @media (max-width:880px){
+    .hero-grid,.band,.install-grid{grid-template-columns:1fr}
+    .gallery{grid-template-columns:1fr}
+    .stats{grid-template-columns:1fr 1fr}
+    .frow{grid-template-columns:1fr; gap:8px}
+    h1{font-size:36px}
+    .nav-links{display:none}
+    header{padding-top:44px}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-in">
+    <a class="brand" href="#top"><img src="assets/app_icon.png" alt="CleanR icon">CleanR</a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#screenshots">Screenshots</a>
+      <a href="#safety">Safety</a>
+      <a href="#install">Install</a>
+    </div>
+    <div class="spacer"></div>
+    <a class="btn btn-dark" href="https://github.com/coldrazer/CleanR" target="_blank" rel="noopener">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      View on GitHub
+    </a>
+  </div>
+</nav>
+
+<header id="top">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">By Apex Studio LLC · macOS 14+</span>
+        <h1>Your Mac, clean.<span class="thin">No subscription. No telemetry. No black box.</span></h1>
+        <p class="hero-sub">CleanR is the cleaner, optimizer, and malware scanner that does the whole job in the open — 22 modules, every deletion to the Trash first, and source you can inspect before you ever grant it access.</p>
+        <div class="hero-cta">
+          <a class="btn btn-accent" href="https://github.com/coldrazer/CleanR/releases/latest" target="_blank" rel="noopener">Download CleanR</a>
+          <a class="btn btn-ghost" href="https://github.com/coldrazer/CleanR" target="_blank" rel="noopener">Browse the source</a>
+        </div>
+        <p class="hero-note">Free for personal use · Signed &amp; notarized DMG · Trash-first safety model</p>
+      </div>
+      <div class="shot-frame">
+        <img src="assets/screenshots/smart-scan.png" alt="CleanR Smart Scan — one click checks cleanup, protection, performance, apps, and files">
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b>22</b><span>modules in one app</span></div>
+      <div class="stat"><b>725</b><span>automated tests, all passing</span></div>
+      <div class="stat"><b>0</b><span>trackers, ads, or phone-home</span></div>
+      <div class="stat"><b>100%</b><span>deletions to Trash first</span></div>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <h2>Everything a cleaner should do</h2>
+    <p class="section-sub">One app instead of five utilities. Run Smart Scan for the whole sweep, or open a single module — each one reviews before it removes.</p>
+
+    <div class="frow">
+      <h3><span class="dot" style="background:#2e8b62"></span>Cleanup</h3>
+      <p><b>Smart Scan, System Junk, Mail Attachments, Trash Bins, Project Junk, Disk Hogs, Clean History.</b> Sixteen-plus junk categories, developer build folders, Docker and simulator bloat — and every clean restorable in one click for 30 days.</p>
+    </div>
+    <div class="frow">
+      <h3><span class="dot" style="background:#c0453a"></span>Protection</h3>
+      <p><b>Malware Removal, Privacy, Browser Extensions, Saved Wi-Fi, Permissions.</b> Signature scanning at three depths, browser history and cookie cleanup (bookmarks untouched), and a by-app view of every privacy grant on your Mac.</p>
+    </div>
+    <div class="frow">
+      <h3><span class="dot" style="background:#b07d14"></span>Performance</h3>
+      <p><b>Optimization and Maintenance.</b> Login items and launch agents you can actually turn off, plus the built-in macOS upkeep tasks — with advanced tasks marked before they run.</p>
+    </div>
+    <div class="frow">
+      <h3><span class="dot" style="background:#6a5fae"></span>Applications</h3>
+      <p><b>Uninstaller, Unused Apps, Extensions, Updater.</b> Remove apps with their leftovers across 17+ Library locations, reset an app to factory defaults, and keep everything current.</p>
+    </div>
+    <div class="frow">
+      <h3><span class="dot" style="background:#14708a"></span>Files</h3>
+      <p><b>Space Lens, Large &amp; Old Files, Duplicates, Shredder.</b> A treemap of your whole disk, duplicate detection that can consolidate with APFS clones instead of deleting copies, and secure erasure when you mean it.</p>
+    </div>
+  </div>
+</section>
+
+<section id="screenshots">
+  <div class="wrap">
+    <h2>Screenshots</h2>
+    <p class="section-sub">A calm, native interface — system materials, quiet color, and the module name always in view.</p>
+    <div class="gallery">
+      <figure>
+        <img src="assets/screenshots/smart-scan.png" alt="Smart Scan module checklist" loading="lazy">
+        <figcaption><b>Smart Scan</b> — see exactly what will be checked before anything runs.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/screenshots/system-junk.png" alt="System Junk scan screen" loading="lazy">
+        <figcaption><b>System Junk</b> — review every category, item by item, before cleaning.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/screenshots/maintenance.png" alt="Maintenance tasks list" loading="lazy">
+        <figcaption><b>Maintenance</b> — safe tasks one click away; advanced tasks clearly flagged.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/screenshots/settings.png" alt="CleanR settings page" loading="lazy">
+        <figcaption><b>Settings</b> — appearance, language, menu-bar widget, and folder exclusions.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="safety">
+  <div class="wrap">
+    <div class="band">
+      <div>
+        <h2>Built to never lose your data</h2>
+        <p>A cleaner gets deep access to your files. CleanR earns it: inspect the source on GitHub, watch every operation in the log, and undo a clean when you change your mind.</p>
+        <p style="margin-top:16px"><a href="https://github.com/coldrazer/CleanR" target="_blank" rel="noopener" style="color:#8fc3e8">Read the source on GitHub →</a></p>
+      </div>
+      <ul>
+        <li>Trash-first deletion — permanent deletes always ask, and say so</li>
+        <li>Protected-paths blocklist guards system and app-critical files</li>
+        <li>Symlink and TOCTOU checks on every path, every time</li>
+        <li>One-click Restore of any clean from the last 30 days</li>
+        <li>Zero telemetry — verify it in the binary yourself</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>Install</h2>
+    <p class="section-sub">Homebrew, or the notarized DMG from GitHub Releases. Either way it just opens — no right-click dance, no Terminal.</p>
+    <div class="install-grid">
+      <div class="codebox">
+        <code id="brew-cmd">brew tap coldrazer/cleanr &amp;&amp; brew install --cask cleanr</code>
+        <button class="copy-btn" id="copy-btn" type="button">Copy</button>
+      </div>
+      <div class="req">
+        <h3>Requirements</h3>
+        <ul>
+          <li>macOS 14 (Sonoma) or later, Apple silicon or Intel</li>
+          <li>Full Disk Access (CleanR walks you through it, and checks it live in Settings)</li>
+          <li>Updates arrive in-app — no account, ever</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:20px; font-size:15px">Prefer a DMG? <a href="https://github.com/coldrazer/CleanR/releases/latest" target="_blank" rel="noopener">Download the latest release →</a></p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-in">
+    <img src="assets/app_icon.png" alt="">
+    <span>CleanR © 2026 Apex Studio LLC. Strict proprietary license — personal use only, no sale or distribution.</span>
+    <div class="spacer"></div>
+    <a href="https://github.com/coldrazer/CleanR" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/coldrazer/CleanR/releases" target="_blank" rel="noopener">Releases</a>
+    <a href="https://github.com/coldrazer/CleanR/issues" target="_blank" rel="noopener">Issues</a>
+    <a href="https://buymeacoffee.com/cleanus" target="_blank" rel="noopener">Buy me a coffee</a>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('copy-btn').addEventListener('click', function () {
+    var text = document.getElementById('brew-cmd').textContent;
+    navigator.clipboard.writeText(text).then(function () {
+      var btn = document.getElementById('copy-btn');
+      btn.textContent = 'Copied ✓';
+      setTimeout(function () { btn.textContent = 'Copy'; }, 1800);
+    });
+  });
+</script>
+</body>
+</html>
