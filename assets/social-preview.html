@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<!--
+  Source for assets/social-preview.png (GitHub repo card / og:image, 1280x640).
+  Edit this file, then re-render with:
+
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+      --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
+      --window-size=1280,640 --default-background-color=00000000 \
+      --screenshot="$PWD/assets/social-preview@2x.png" \
+      "file://$PWD/assets/social-preview.html"
+    sips -z 640 1280 assets/social-preview@2x.png --out assets/social-preview.png
+    rm assets/social-preview@2x.png
+
+  Keeping the source checked in means the card never drifts from the brand
+  again (the old PNG still said "Mac Clean" with a dead brew command).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1280px; height: 640px; }
+  body {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .card {
+    width: 1280px;
+    height: 640px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 76px;
+    padding: 0 96px;
+    background:
+      radial-gradient(1100px 700px at 14% 6%, rgba(102,217,209,0.18), transparent 60%),
+      radial-gradient(900px 700px at 96% 100%, rgba(250,210,77,0.10), transparent 55%),
+      linear-gradient(135deg, #5A2E96 0%, #3A1E70 46%, #1B1140 100%);
+    color: #fff;
+  }
+  .card::after { /* faint diagonal sheen */
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(115deg, rgba(255,255,255,0.05) 0%, transparent 30%);
+    pointer-events: none;
+  }
+
+  /* Left: the real app icon (unchanged brand mark). */
+  .icon { flex: 0 0 auto; width: 300px; height: 300px; }
+  .icon img {
+    width: 100%; height: 100%;
+    border-radius: 66px;          /* clip any corner artifact to a squircle */
+    display: block;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.45);
+  }
+
+  .content { display: flex; flex-direction: column; }
+
+  .titlerow { display: flex; align-items: center; gap: 30px; }
+  .title {
+    font-size: 108px;
+    font-weight: 800;
+    letter-spacing: -3px;
+    line-height: 0.98;
+  }
+  .title .sai { color: #66D9D1; }
+  /* Small crossed-sai accent beside the wordmark (a nod to the name). */
+  .saimark {
+    width: 96px; height: 96px; flex: 0 0 auto;
+    filter: drop-shadow(0 5px 12px rgba(0,0,0,0.45));
+  }
+
+  .tagline {
+    margin-top: 18px;
+    font-size: 31px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.66);
+    letter-spacing: -0.2px;
+  }
+  .tagline .dot { color: rgba(255,255,255,0.32); padding: 0 8px; }
+
+  .badges { margin-top: 30px; display: flex; flex-wrap: nowrap; gap: 12px; }
+  .badge {
+    font-size: 20px;
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 9px 16px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.88);
+  }
+  .badge.accent {
+    background: rgba(102,217,209,0.14);
+    border-color: rgba(102,217,209,0.45);
+    color: #9defe7;
+  }
+
+  .cmd {
+    margin-top: 34px;
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 19px 27px;
+    border-radius: 17px;
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.13);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    font-size: 24px;
+    letter-spacing: -0.3px;
+  }
+  .cmd .prompt { color: #3DCC78; font-weight: 700; }
+  .cmd .text { color: #ffffff; }
+  .cmd .flag { color: rgba(255,255,255,0.62); }
+  .cmd .tap { color: rgba(255,255,255,0.50); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">
+      <img src="app_icon.png" alt="Apex Studio_1 app icon">
+    </div>
+
+    <div class="content">
+      <div class="titlerow">
+        <div class="title">Mac <span class="sai">Sai</span></div>
+
+        <!-- Crossed sai (the Okinawan ninja weapon) — visual pun on "Sai". -->
+        <svg class="saimark" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#d9fbf7"/>
+              <stop offset="0.5" stop-color="#66D9D1"/>
+              <stop offset="1" stop-color="#37ada5"/>
+            </linearGradient>
+            <linearGradient id="grip" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#4f8f8a"/>
+              <stop offset="1" stop-color="#2f5e5a"/>
+            </linearGradient>
+            <g id="sai">
+              <polygon points="100,14 110,98 100,112 90,98" fill="url(#steel)"/>
+              <polygon points="100,14 100,112 90,98" fill="#ffffff" opacity="0.35"/>
+              <path d="M100,116 C74,116 64,108 60,74"
+                    stroke="url(#steel)" stroke-width="11" stroke-linecap="round" fill="none"/>
+              <path d="M100,116 C126,116 136,108 140,74"
+                    stroke="url(#steel)" stroke-width="11" stroke-linecap="round" fill="none"/>
+              <rect x="92" y="110" width="16" height="56" rx="7" fill="url(#grip)"/>
+              <circle cx="100" cy="176" r="13" fill="url(#steel)"/>
+            </g>
+          </defs>
+          <use href="#sai" transform="rotate(32 100 100)"/>
+          <use href="#sai" transform="rotate(-32 100 100)"/>
+        </svg>
+      </div>
+
+      <div class="tagline">
+        Free, open-source CleanMyMac alternative.<br>
+        Swift 6 <span class="dot">·</span> No telemetry <span class="dot">·</span> No subscription.
+      </div>
+
+      <div class="badges">
+        <span class="badge">macOS 14+</span>
+        <span class="badge">Swift 6</span>
+        <span class="badge">SwiftUI</span>
+        <span class="badge">BSD-3</span>
+        <span class="badge accent">521 tests</span>
+      </div>
+
+      <div class="cmd">
+        <span class="prompt">$</span>
+        <span class="text">brew install <span class="flag">--cask</span> <span class="tap">apexstudio1/apexstudio1/</span>apex-studio-1</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

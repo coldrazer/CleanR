@@ -1,0 +1,85 @@
+# XcodeGen project for CleanR.
+#
+# CleanR's code lives in the local SwiftPM package (Package.swift at this root);
+# this project wraps it so Xcode can manage the app bundle, entitlements, and
+# signing. Generate with:  xcodegen generate
+#
+# The release path still uses scripts/build-dmg.sh (pure SwiftPM + manual bundle),
+# so this .xcodeproj is for day-to-day Xcode development, not CI releases.
+
+name: CleanR
+options:
+  bundleIdPrefix: com.cleanr
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "16.4"
+  createIntermediateGroups: true
+  defaultConfig: Release
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    ARCHS: "arm64 x86_64"
+    ONLY_ACTIVE_ARCH: "NO"
+    CODE_SIGN_IDENTITY: "Apple Development"
+    CODE_SIGN_STYLE: "Automatic"
+    DEVELOPMENT_TEAM: ""
+    PRODUCT_BUNDLE_IDENTIFIER: "com.cleanr.app"
+    CODE_SIGN_ENTITLEMENTS: "CleanR.entitlements"
+    GENERATE_INFOPLIST_FILE: "YES"
+
+packages:
+  CleanR:
+    path: ./Package.swift
+
+targets:
+  CleanR:
+    type: application
+    platform: macOS
+    sources: []
+    dependencies:
+      - package: CleanR/CleanR
+    settings:
+      base:
+        PRODUCT_NAME: CleanR
+        INFOPLIST_KEY_CFBundleDisplayName: "CleanR"
+        INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.utilities"
+        INFOPLIST_KEY_NSHighResolutionCapable: "YES"
+        INFOPLIST_KEY_LSMultipleInstancesProhibited: "YES"
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+      configs:
+        Debug:
+          CODE_SIGNING_ALLOWED: "NO"
+          CODE_SIGNING_REQUIRED: "NO"
+
+  CleanRMenu:
+    type: application
+    platform: macOS
+    sources: []
+    dependencies:
+      - package: CleanR/CleanRMenu
+    settings:
+      base:
+        PRODUCT_NAME: CleanRMenu
+        PRODUCT_BUNDLE_IDENTIFIER: "com.cleanr.menu"
+        INFOPLIST_KEY_CFBundleDisplayName: "CleanR Menu"
+        INFOPLIST_KEY_LSUIElement: "YES"
+      configs:
+        Debug:
+          CODE_SIGNING_ALLOWED: "NO"
+          CODE_SIGNING_REQUIRED: "NO"
+
+schemes:
+  CleanR:
+    build:
+      targets:
+        CleanR: all
+    run:
+      config: Release
+  CleanRMenu:
+    build:
+      targets:
+        CleanRMenu: all
+    run:
+      config: Release

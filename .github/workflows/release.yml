@@ -1,0 +1,343 @@
+name: Release
+
+# Releases are intentional, not automatic. A version bump on main no longer
+# ships anything on its own. Cut a release by pushing a version tag:
+#   Stable:  git tag v1.9.0        && git push origin v1.9.0
+#   Beta:    git tag v1.9.0-beta.1 && git push origin v1.9.0-beta.1
+# A tag containing a hyphen (a SemVer prerelease identifier) is published as a
+# GitHub pre-release: it is excluded from /releases/latest (so the manual in-app
+# updater never offers it) and does NOT update the Homebrew cask, so existing
+# users are unaffected. Stable tags must match the committed VERSION file.
+# You can also run this workflow manually from the Actions tab for a stable build.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Build & Release DMG
+    runs-on: macos-15
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version and channel
+        id: version
+        run: |
+          FILE_VERSION=$(cat VERSION | tr -d '[:space:]')
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG="${{ github.ref_name }}"
+            VERSION="${TAG#v}"
+          else
+            # Manual workflow_dispatch (no tag): a stable build of VERSION.
+            VERSION="$FILE_VERSION"
+            TAG="v$VERSION"
+          fi
+          # A SemVer prerelease identifier (a hyphen, e.g. 1.11.5-beta.1) selects
+          # the beta channel: GitHub pre-release + no Homebrew cask update.
+          if [[ "$VERSION" == *-* ]]; then
+            PRERELEASE=true
+          else
+            PRERELEASE=false
+            # A stable tag must match the committed VERSION so the binary's
+            # appVersion and the release tag can never drift.
+            if [ "$VERSION" != "$FILE_VERSION" ]; then
+              echo "::error::Stable tag $TAG does not match VERSION file ($FILE_VERSION). Bump VERSION or use a -beta tag."
+              exit 1
+            fi
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION (tag $TAG, prerelease=$PRERELEASE)"
+
+      - name: Check if release exists
+        id: check
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          if gh release view "$TAG" &>/dev/null; then
+            EXISTING_SHA=$(gh release view "$TAG" --json targetCommitish -q '.targetCommitish')
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release $TAG exists (commit: $EXISTING_SHA)"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Release $TAG does not exist yet"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Cache the SwiftPM .build dir so dependency compiles (GRDB, etc.) are
+      # reused across releases. Keyed on Package.resolved; restore-keys give
+      # partial reuse so only changed sources recompile.
+      - name: Cache SwiftPM .build
+        uses: actions/cache@v5
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Stamp prerelease version into the binary
+        if: steps.version.outputs.prerelease == 'true'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          # Betas are built straight from a feature commit, so the committed
+          # VERSION/appVersion still read the stable number. Stamp the beta
+          # version in (CI workspace only, never committed) so the build reports
+          # itself correctly in About/Settings. BSD sed on the macOS runner.
+          sed -i '' "s/appVersion = \"[^\"]*\"/appVersion = \"$VERSION\"/" Sources/CleanRKit/Constants.swift
+          grep -n 'appVersion = ' Sources/CleanRKit/Constants.swift
+
+      - name: Build release binary
+        run: swift build -c release
+
+      - name: Run tests
+        run: swift test
+
+      # The gate must run against the artifact users actually get, not only the
+      # debug build CI checks on a PR. Both executables ship inside the DMG, so
+      # both are inspected — a menu-bar helper is just as capable of carrying a
+      # tracker as the main app.
+      - name: Verify network surface of release binaries
+        run: |
+          BIN=$(swift build -c release --show-bin-path)
+          for product in CleanR CleanRMenu; do
+            bash scripts/check-network-surface.sh "${BIN}/${product}"
+          done
+
+      # --- Signing & notarization ---------------------------------------------
+      # All secrets live in GitHub repo settings; nothing sensitive is committed.
+      # The Developer ID cert is imported into an ephemeral keychain that is the
+      # default for this job and deleted afterwards. See docs/RELEASING.md.
+      - name: Import Developer ID certificate
+        env:
+          DEVID_CERT_P12_BASE64: ${{ secrets.DEVID_CERT_P12_BASE64 }}
+          DEVID_CERT_PASSWORD: ${{ secrets.DEVID_CERT_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          CERT_PATH="$RUNNER_TEMP/devid.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          echo -n "$DEVID_CERT_P12_BASE64" | base64 --decode -o "$CERT_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          # Make it the default so codesign and notarytool both find what they need.
+          security default-keychain -s "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" \
+            $(security list-keychains -d user | sed 's/"//g')
+
+          security import "$CERT_PATH" -P "$DEVID_CERT_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" >/dev/null
+          rm -f "$CERT_PATH"
+          security find-identity -v -p codesigning
+
+      - name: Store notarytool credentials
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: |
+          KEY_PATH="$RUNNER_TEMP/asc_key.p8"
+          echo -n "$ASC_KEY_P8_BASE64" | base64 --decode -o "$KEY_PATH"
+          xcrun notarytool store-credentials "CleanR" \
+            --key "$KEY_PATH" \
+            --key-id "$ASC_KEY_ID" \
+            --issuer "$ASC_ISSUER_ID" \
+            --keychain "$RUNNER_TEMP/app-signing.keychain-db"
+          rm -f "$KEY_PATH"
+
+      - name: Build, sign & notarize DMG
+        env:
+          APPLE_DEVELOPER_ID: ${{ secrets.APPLE_DEVELOPER_ID }}
+          NOTARY_PROFILE: CleanR
+        run: |
+          # Export so build-dmg.sh names the DMG / Info.plist with this version
+          # (the beta tag's version, which differs from the committed VERSION).
+          export VERSION="${{ steps.version.outputs.version }}"
+          bash scripts/build-dmg.sh --notarize
+          ls -la .build/CleanR-${VERSION}.dmg
+          xcrun stapler validate .build/CleanR-${VERSION}.dmg
+
+      # Last look at the exact bytes that ship: the bundle inside the DMG after
+      # signing, including the login-item helper, in case signing or the bundling
+      # step itself pulled something in.
+      - name: Verify network surface of the bundled app
+        run: |
+          bash scripts/check-network-surface.sh .build/dmg/CleanR.app/Contents/MacOS/CleanR
+          bash scripts/check-network-surface.sh \
+            .build/dmg/CleanR.app/Contents/Library/LoginItems/CleanRMenu.app/Contents/MacOS/CleanRMenu
+
+      - name: Clean up signing keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" || true
+
+      # Every installed copy of this build calls the URLs hardcoded in
+      # MCConstants forever afterwards. If the repository has been renamed,
+      # moved, or the constants drifted from the real owner, the updater 404s
+      # silently on users' Macs and nothing in this pipeline would ever notice -
+      # so check the shipped constants here, before any release is deleted.
+      - name: Verify the update endpoints this build will call
+        run: |
+          constant() {
+            grep -oE "$1 = URL\\(string: \"[^\"]+\"\\)" Sources/CleanRKit/Constants.swift \
+              | sed -E 's/.*string: "([^"]+)".*/\1/'
+          }
+          api=$(constant latestReleaseAPI)
+          repo_root=$(echo "$api" | sed -E 's#(https://api.github.com/repos/[^/]+/[^/]+).*#\1#')
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$repo_root")
+          echo "$repo_root -> HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::MCConstants.latestReleaseAPI points at $api, but $repo_root is not reachable (HTTP $code). Installed copies would never see an update."
+            exit 1
+          fi
+          latest_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$api")
+          echo "$api -> HTTP $latest_code"
+          if [ "$latest_code" != "200" ]; then
+            echo "::warning::No published release at $api yet (expected for the first release of this repository)."
+          fi
+          cask=$(constant homebrewCaskAPI)
+          cask_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$cask")
+          echo "$cask -> HTTP $cask_code"
+          if [ "$cask_code" != "200" ]; then
+            echo "::warning::Homebrew does not list this cask yet; Homebrew installs fall back to the GitHub release check."
+          fi
+
+      # Re-cutting a version is only ever deliberate through a tag push. An
+      # untagged "Run workflow" click must not delete a published release plus
+      # its tag — if the rebuild then failed, the shipping artifact and the tag
+      # it pointed at would both be gone.
+      - name: Refuse to overwrite a published release from an untagged run
+        if: steps.check.outputs.exists == 'true' && github.ref_type != 'tag'
+        run: |
+          echo "::error::Release ${{ steps.version.outputs.tag }} already exists. Push the tag to re-cut it; a manual run will not delete a published release."
+          exit 1
+
+      - name: Delete existing release (same version)
+        if: steps.check.outputs.exists == 'true' && github.ref_type == 'tag'
+        run: gh release delete "${{ steps.version.outputs.tag }}" --yes --cleanup-tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="${{ steps.version.outputs.tag }}"
+
+          if [ "${{ steps.version.outputs.prerelease }}" = "true" ]; then
+            gh release create "$TAG" \
+              ".build/CleanR-${VERSION}.dmg" \
+              --title "CleanR $TAG (beta)" \
+              --prerelease \
+              --notes "$(cat <<EOF
+          ## CleanR $TAG (beta)
+
+          This is a **pre-release for testing**, not the latest stable release. It is intentionally **not** published to Homebrew and is excluded from in-app update checks, so other users are unaffected.
+
+          ### Install
+          Download **CleanR-${VERSION}.dmg**, open it, and drag CleanR to your Applications folder. Quit any running copy of CleanR first.
+
+          ### Requirements
+          - macOS 14 (Sonoma) or later
+          - Grant Full Disk Access in System Settings for complete scan results
+
+          ### Safety
+          All deletions go to Trash by default. Protected system paths are blocklisted. Every operation is logged.
+          EOF
+          )"
+          else
+            # Changelog from the previous STABLE tag. `head -1` of all tags is
+            # this release itself, which produced "vX...vX" links.
+            PREV_TAG="$(git tag --sort=-creatordate | grep -vx "$TAG" | grep -v -e '-' | head -1 || true)"
+            gh release create "$TAG" \
+              ".build/CleanR-${VERSION}.dmg" \
+              --title "CleanR $TAG" \
+              --generate-notes \
+              ${PREV_TAG:+--notes-start-tag "$PREV_TAG"} \
+              --notes "$(cat <<EOF
+          ## CleanR $TAG
+
+          ### Download (fastest)
+
+          Download **CleanR-${VERSION}.dmg** below, open it, and drag CleanR to your Applications folder. Updating? Quit CleanR first and replace the old copy.
+
+          ### Homebrew
+
+          \`\`\`
+          brew install --cask cleanr      # new install
+          brew upgrade --cask cleanr      # already installed with Homebrew
+          \`\`\`
+
+          Homebrew picks up new releases automatically, usually within a day or two. Until then it still serves the previous version, so if \`brew\` doesn't offer ${VERSION} yet, use the DMG above. If you installed from the DMG, keep updating with the DMG: \`brew install\` refuses to replace an app it didn't install.
+
+          ### Requirements
+          - macOS 14 (Sonoma) or later
+          - Grant Full Disk Access in System Settings for complete scan results
+
+          ### Safety
+          All deletions go to Trash by default. Protected system paths are blocklisted. Every operation is logged.
+          EOF
+          )"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Homebrew cask in tap repo
+        if: steps.version.outputs.prerelease != 'true'
+        run: |
+          REPO_OWNER="${{ github.repository_owner }}"
+          TAP="${REPO_OWNER}/homebrew-cleanr"
+          CASK_PATH="Casks/cleanr.rb"
+          VERSION="${{ steps.version.outputs.version }}"
+
+          SHA256=$(shasum -a 256 ".build/CleanR-${VERSION}.dmg" | awk '{print $1}')
+          echo "DMG SHA256: $SHA256"
+
+          if ! gh repo view "${TAP}" &>/dev/null; then
+            echo "::error::Tap ${TAP} not found. Create it with scripts/setup-homebrew-tap.sh"
+            exit 1
+          fi
+
+          # Local Casks/cleanr.rb is the template; sed in the new version
+          # and SHA, then push the result to the tap (not back to this repo —
+          # that's the race condition the previous workflow had).
+          sed -i '' "s/version \".*\"/version \"${VERSION}\"/" Casks/cleanr.rb
+          sed -i '' "s/sha256 \".*\"/sha256 \"${SHA256}\"/" Casks/cleanr.rb
+          echo "Cask preview:"
+          head -5 Casks/cleanr.rb
+
+          EXISTING_SHA=$(gh api "repos/${TAP}/contents/${CASK_PATH}" --jq '.sha' 2>/dev/null || echo "")
+          NEW_CONTENT=$(base64 -i Casks/cleanr.rb)
+
+          EXISTING_CONTENT=""
+          if [ -n "$EXISTING_SHA" ]; then
+            EXISTING_CONTENT=$(gh api "repos/${TAP}/contents/${CASK_PATH}" --jq '.content' | tr -d '\n')
+          fi
+          if [ "$NEW_CONTENT" = "$EXISTING_CONTENT" ]; then
+            echo "Cask already up to date in ${TAP}"
+            exit 0
+          fi
+
+          ARGS=(
+            "repos/${TAP}/contents/${CASK_PATH}"
+            -X PUT
+            -f "message=Update CleanR cask to v${VERSION}"
+            -f "content=${NEW_CONTENT}"
+            -f "committer[name]=github-actions[bot]"
+            -f "committer[email]=github-actions[bot]@users.noreply.github.com"
+          )
+          if [ -n "$EXISTING_SHA" ]; then
+            ARGS+=(-f "sha=${EXISTING_SHA}")
+          fi
+          gh api "${ARGS[@]}" >/dev/null
+          echo "Cask updated in ${TAP} to v${VERSION}"
+        env:
+          GH_TOKEN: ${{ secrets.TAP_PUSH_TOKEN }}

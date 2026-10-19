@@ -1,0 +1,91 @@
+import Foundation
+import CleanRKit
+
+public struct LargeOldFilesModule: ScanModule {
+    public let id = "large_old_files"
+    public var name: String { L10n.tr("大文件与旧文件", "Large & Old Files", "Большие и старые файлы") }
+    public let category = ModuleCategory.files
+
+    // Excluded from Smart Scan's "junk found" total: large media (music,
+    // videos, project files) is not junk, and folding it into the headline
+    // number is misleading. It stays discoverable in its own dedicated
+    // section, which runs its own scan. Mirrors the other `.files` modules
+    // (Duplicates, SpaceLens, Shredder), which are opt-in for the same reason.
+    public let includedInSmartScan = false
+
+    private let scanner = TargetedScanner()
+    private let minSize: UInt64
+    private let minAge: TimeInterval?
+
+    public init(minSize: UInt64 = 50 * 1024 * 1024, minAge: TimeInterval? = nil) {
+        self.minSize = minSize
+        self.minAge = minAge
+    }
+
+    public func scan() async -> [ScanResult] {
+        let targets = [
+            ScanTarget(
+                path: MCConstants.home,
+                recursive: true,
+                maxDepth: 5,
+                minAge: minAge,
+                minSize: minSize,
+                excludePatterns: ["Library", ".Trash", ".git", "node_modules"]
+            ),
+            ScanTarget(
+                path: MCConstants.downloads,
+                recursive: true,
+                minAge: minAge,
+                minSize: minSize
+            ),
+        ]
+
+        let items = await scanner.scan(targets: targets)
+        let split = Self.splitLargeAndOld(items: items, minSize: minSize)
+
+        return Self.makeResults(large: split.large, old: split.old).filteringUncleanable()
+    }
+
+    /// Pure result builder for testability. Large and old files always require
+    /// explicit user selection before cleaning.
+    ///
+    /// Returns the results *unfiltered*: callers must apply
+    /// `filteringUncleanable()` before showing them (see `scan()`). That step is
+    /// deliberately kept out here so this builder stays pure and can be tested
+    /// with synthetic items that don't exist on disk.
+    internal static func makeResults(large: [FileItem], old: [FileItem]) -> [ScanResult] {
+        var results: [ScanResult] = []
+        if !large.isEmpty {
+            results.append(ScanResult(category: .largeFiles, items: large, autoSelect: false))
+        }
+        if !old.isEmpty {
+            results.append(ScanResult(category: .oldFiles, items: old, autoSelect: false))
+        }
+        return results
+    }
+
+    /// Pure splitter for testability: classifies file items into "large" and "old"
+    /// buckets based on size and modification age. Both buckets are sorted
+    /// (large: descending size; old: ascending mod date).
+    public static func splitLargeAndOld(
+        items: [FileItem],
+        minSize: UInt64,
+        oldThreshold: TimeInterval = 180 * 24 * 3600,
+        now: Date = Date()
+    ) -> (large: [FileItem], old: [FileItem]) {
+        var large: [FileItem] = []
+        var old: [FileItem] = []
+        let cutoff = now.addingTimeInterval(-oldThreshold)
+
+        for item in items where !item.isDirectory {
+            if item.size >= minSize { large.append(item) }
+            if let modDate = item.modificationDate, modDate < cutoff { old.append(item) }
+        }
+        large.sort { $0.size > $1.size }
+        old.sort { ($0.modificationDate ?? .distantFuture) < ($1.modificationDate ?? .distantFuture) }
+
+        return (large, old)
+    }
+}
+
+// `FileGroup` moved to CleanRKit — see Sources/CleanRKit/FileGroup.swift.

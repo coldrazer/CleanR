@@ -1,0 +1,224 @@
+import Foundation
+
+/// Validates that a deletion operation is safe to execute.
+///
+/// This type lives in CleanRKit (no FileManager / NSWorkspace dependencies)
+/// so it can be exhaustively unit-tested. The actual deletion happens in
+/// `CleaningEngine` in the CleanR target, which calls `validateDeletion`
+/// before touching any file.
+public struct SafetyGuard: Sendable {
+    public enum SafetyError: Error, LocalizedError, Equatable {
+        case protectedPath(String)
+        case tooManyFiles(Int)
+        case symlinkTarget(String)
+        case sipProtected(String)
+        case outsideUserScope(String)
+        case invalidPath(String)
+        case userExcluded(String)
+
+        public var errorDescription: String? {
+            switch self {
+            case .protectedPath(let path):
+                L10n.tr("无法修改受保护的系统路径：\(path)", "Cannot modify protected system path: \(path)", "Невозможно изменить защищённый системный путь: \(path)")
+            case .tooManyFiles(let count):
+                L10n.tr("操作超过 \(MCConstants.maxFilesPerOperation) 个文件的安全限制（尝试处理：\(count) 个）", "Operation exceeds safety limit of \(MCConstants.maxFilesPerOperation) files (attempted: \(count))", "Операция превышает безопасный лимит: \(MCConstants.maxFilesPerOperation) файлов (запрошено: \(count))")
+            case .symlinkTarget(let path):
+                L10n.tr("路径通过符号链接指向了意外位置：\(path)", "Path resolves through symlink to unexpected location: \(path)", "Путь через символическую ссылку ведёт в непредусмотренное расположение: \(path)")
+            case .sipProtected(let path):
+                L10n.tr("路径受系统完整性保护（SIP）保护：\(path)", "Path is protected by System Integrity Protection: \(path)", "Путь защищён функцией System Integrity Protection (SIP): \(path)")
+            case .outsideUserScope(let path):
+                L10n.tr("路径不在允许的用户范围内：\(path)", "Path is outside the allowed user scope: \(path)", "Путь находится за пределами разрешённой области пользователя: \(path)")
+            case .invalidPath(let path):
+                L10n.tr("路径无效或包含非法字符：\(path)", "Path is invalid or contains illegal characters: \(path)", "Путь недействителен или содержит недопустимые символы: \(path)")
+            case .userExcluded(let path):
+                L10n.tr("路径位于排除文件夹中：\(path)", "Path is inside an excluded folder: \(path)", "Путь находится в исключённой папке: \(path)")
+            }
+        }
+    }
+
+    public init() {}
+
+    /// Validates an entire deletion batch. Throws on the first failure.
+    ///
+    /// - Throws: `SafetyError.tooManyFiles` if the batch exceeds the cap.
+    /// - Throws: `SafetyError.invalidPath` if any path is empty or contains NULL bytes.
+    /// - Throws: any error from `validatePath` for the first unsafe path.
+    public func validateDeletion(paths: [URL]) throws {
+        if paths.count > MCConstants.maxFilesPerOperation {
+            throw SafetyError.tooManyFiles(paths.count)
+        }
+
+        for path in paths {
+            try validatePath(path)
+        }
+    }
+
+    /// Validates a single path against the safety policy.
+    ///
+    /// Safety checks (in order):
+    /// 1. Path is non-empty and contains no NULL bytes.
+    /// 2. After resolving symlinks, the path does not fall inside any protected
+    ///    prefix (`/System`, `/usr`, `/bin`, `/sbin`, etc.).
+    /// 3. After resolving symlinks, the path does not fall inside `/System/` (SIP).
+    /// 4. After resolving symlinks, the path is not under a user-excluded folder
+    ///    (issue #141). Inject `excludedFolders` in tests; production defaults
+    ///    to `FolderExclusionPreferences.paths`.
+    /// 5. If symlink resolution changed the first 3 path components, the symlink
+    ///    is treated as suspicious (TOCTOU prevention).
+    public func validatePath(
+        _ url: URL,
+        excludedFolders: [String] = FolderExclusionPreferences.paths
+    ) throws {
+        let original = url.path(percentEncoded: false)
+
+        if original.isEmpty {
+            throw SafetyError.invalidPath("(empty)")
+        }
+        if original.contains("\0") {
+            throw SafetyError.invalidPath(original)
+        }
+
+        let resolvedPath = url.resolvingSymlinksInPath().path(percentEncoded: false)
+
+        // Canonicalize macOS firmlinks (/var, /tmp, /etc → strip /private)
+        // up-front so every downstream check operates on stable strings.
+        // Without this, the SAME file looks different to the protected-
+        // paths check vs the redirect check depending on whether
+        // FileManager.enumerator handed us /var/log/x or /private/var/log/x
+        // on this particular macOS version.
+        let originalCanonical = Self.canonicalizeMacOSFirmlinks(original)
+        let resolvedCanonical = Self.canonicalizeMacOSFirmlinks(resolvedPath)
+
+        // SIP check first — more specific than the general protected-paths
+        // blocklist. `/System` lives in both; we surface the more accurate
+        // "macOS will refuse this regardless of permissions" error.
+        if resolvedCanonical.hasPrefix("/System/") || resolvedCanonical == "/System" {
+            throw SafetyError.sipProtected(resolvedPath)
+        }
+
+        for protected in Self.canonicalProtectedPaths {
+            if resolvedCanonical.hasPrefix(protected + "/") || resolvedCanonical == protected {
+                throw SafetyError.protectedPath(resolvedPath)
+            }
+        }
+
+        if PathExclusion.isExcluded(path: resolvedCanonical, by: excludedFolders)
+            || PathExclusion.isExcluded(path: originalCanonical, by: excludedFolders) {
+            throw SafetyError.userExcluded(resolvedPath)
+        }
+
+        if originalCanonical != resolvedCanonical {
+            let originalComponents = originalCanonical.components(separatedBy: "/")
+            let resolvedComponents = resolvedCanonical.components(separatedBy: "/")
+            if originalComponents.prefix(3) != resolvedComponents.prefix(3) {
+                throw SafetyError.symlinkTarget(resolvedPath)
+            }
+
+            // `prefix(3)` is only `/Users/<name>`, so a link inside a scanned
+            // cache that points at `~/Documents` cleared every check above — and
+            // the engine deletes the ORIGINAL url, which means unlinking that
+            // path removes the user's real file, not the link.
+            //
+            // Only the final component may be the link: if the item's own parent
+            // directory also redirects, an ancestor is a symlink and the item is
+            // a genuine file somewhere else. Trashing a symlink itself is safe
+            // (it moves the link, leaving its target alone), so that case still
+            // passes.
+            let parent = url.deletingLastPathComponent()
+            let parentOriginal = Self.canonicalizeMacOSFirmlinks(
+                parent.path(percentEncoded: false)
+            )
+            let parentResolved = Self.canonicalizeMacOSFirmlinks(
+                parent.resolvingSymlinksInPath().path(percentEncoded: false)
+            )
+            if parentOriginal != parentResolved {
+                throw SafetyError.symlinkTarget(resolvedPath)
+            }
+        }
+    }
+
+    /// `MCConstants.protectedPaths` with macOS firmlinks canonicalized so
+    /// `/private/var/db` matches `/var/db` (and vice versa). Computed once.
+    private static let canonicalProtectedPaths: Set<String> =
+        Set(MCConstants.protectedPaths.map(SafetyGuard.canonicalizeMacOSFirmlinks))
+
+    /// Strips the `/private/` prefix when the immediate next component
+    /// is one of macOS's firmlink mounts (`var`, `tmp`, `etc`). After
+    /// this, `/private/var/log/wifi.log` and `/var/log/wifi.log` are the
+    /// same string — which is the right answer for redirect detection,
+    /// because they ARE the same on-disk location reached via different
+    /// canonicalization paths.
+    ///
+    /// We only canonicalize the three known firmlinks. Arbitrary paths
+    /// under `/private/` (e.g. `/private/var/db`, which is a real
+    /// protected location) keep their form so the protected-paths check
+    /// stays effective.
+    static func canonicalizeMacOSFirmlinks(_ path: String) -> String {
+        for firmlink in ["var", "tmp", "etc"] {
+            let privatePrefix = "/private/\(firmlink)"
+            if path == privatePrefix {
+                return "/\(firmlink)"
+            }
+            if path.hasPrefix(privatePrefix + "/") {
+                return "/\(firmlink)" + path.dropFirst(privatePrefix.count)
+            }
+        }
+        return path
+    }
+
+    /// Returns true if the given bundle identifier names an Apple system app
+    /// that should never be uninstalled by the user.
+    public func isProtectedApp(_ bundleID: String) -> Bool {
+        MCConstants.protectedApps.contains(bundleID)
+    }
+
+    /// Directories that hold the user's own work rather than an application's
+    /// support files.
+    ///
+    /// The uninstaller scans some of these on purpose — apps really do create
+    /// folders in `~/Documents` — but a match there comes from name heuristics,
+    /// not from anything the app declared. `~/Documents/Google Docs notes.md`
+    /// matches Chrome's `includeTerms: ["google", "chrome"]` as a substring.
+    /// Anything under one of these roots therefore has to stay unchecked so the
+    /// user opts in file by file instead of losing it behind a generic
+    /// "associated files" confirmation.
+    ///
+    /// `Mobile Documents/com~apple~CloudDocs` is the iCloud Drive location that
+    /// Desktop and Documents move to when the user turns on iCloud sync, so the
+    /// real Desktop is not always `~/Desktop`.
+    public static var userContentRoots: [URL] {
+        let home = MCConstants.home
+        let names = ["Documents", "Desktop", "Downloads", "Pictures", "Music", "Movies"]
+        return names.map { home.appending(path: $0) }
+            + [home.appending(path: "Library/Mobile Documents/com~apple~CloudDocs")]
+    }
+
+    /// True when `url` is a user content root or lives inside one.
+    public func isUserContentPath(_ url: URL) -> Bool {
+        let path = url.path(percentEncoded: false)
+        let homePath = MCConstants.home.path(percentEncoded: false)
+        // The home directory itself is never a per-app leftover.
+        if PathExclusion.isInside(homePath, root: path) { return true }
+        return Self.userContentRoots.contains {
+            PathExclusion.isInside(path, root: $0.path(percentEncoded: false))
+        }
+    }
+
+    /// Returns true if a "this preference is orphaned, delete it" decision is
+    /// safe for the given URL. Currently restricted to caches / logs / saved
+    /// app state / web data — never preferences, containers, or keychains.
+    public func isSafeForOrphanDeletion(_ url: URL) -> Bool {
+        let path = url.path(percentEncoded: false)
+        let safeRoots = [
+            MCConstants.userCaches.path(percentEncoded: false),
+            MCConstants.userLogs.path(percentEncoded: false),
+            MCConstants.userHTTPStorages.path(percentEncoded: false),
+            MCConstants.userSavedAppState.path(percentEncoded: false),
+            MCConstants.userWebKit.path(percentEncoded: false),
+        ]
+        // `isInside` bounds the match at a `/` separator. A bare `hasPrefix`
+        // here would let `~/Library/CachesBackup/…` read as inside
+        // `~/Library/Caches`.
+        return safeRoots.contains { PathExclusion.isInside(path, root: $0) }
+    }
+}

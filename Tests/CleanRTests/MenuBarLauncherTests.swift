@@ -1,0 +1,143 @@
+import XCTest
+import ServiceManagement
+@testable import CleanR
+import CleanRKit
+
+/// Tests for the `MenuBarLauncher` SMAppService wrapper.
+///
+/// These tests deliberately **do not** call `register()` / `unregister()`
+/// / `setEnabled()` — those mutate the real launchd database and would
+/// plant a login item on every test run. See the comparable LaunchAgent
+/// guidance: tests must not pollute the user's macOS state. The surface
+/// we can safely exercise is the read-only side: identity, initial
+/// state, status readability, plus source guards for the #138 keep-alive
+/// wiring. Decision logic lives in `MenuBarHelperPolicyTests`.
+@MainActor
+final class MenuBarLauncherTests: XCTestCase {
+
+    func testSharedInstanceIsSingleton() {
+        let a = MenuBarLauncher.shared
+        let b = MenuBarLauncher.shared
+        XCTAssertTrue(a === b, "shared should return the same instance every time")
+    }
+
+    func testInitialLastErrorIsNil() {
+        // Fresh state from the singleton — no prior register attempt
+        // should have left an error behind.
+        XCTAssertNil(MenuBarLauncher.shared.lastError)
+    }
+
+    func testStatusIsReadableWithoutCrashing() {
+        // The actual returned status depends on whether the helper is
+        // bundled in the test runtime (it isn't, under `swift test`),
+        // but reading the value must not crash and must yield a known
+        // SMAppService.Status case.
+        let status = MenuBarLauncher.shared.status
+        let knownCases: [SMAppService.Status] = [
+            .notRegistered, .enabled, .requiresApproval, .notFound,
+        ]
+        XCTAssertTrue(knownCases.contains(status),
+                      "status returned an unexpected case: \(status)")
+    }
+
+    func testIsRegisteredMatchesStatus() {
+        // isRegistered is the boolean projection of `status == .enabled`.
+        // Whichever side launchd reports, the two must agree.
+        let launcher = MenuBarLauncher.shared
+        XCTAssertEqual(launcher.isRegistered, launcher.status == .enabled)
+    }
+
+    func testBundleIdentifierIsTheConstant() {
+        // The Service Management identifier must equal the constant the
+        // build script writes into CleanRMenu.app's Info.plist
+        // (`com.cleanr.menu`). If these ever diverge, register() fails
+        // silently with `.notFound`. Catch the drift here.
+        XCTAssertEqual(MCConstants.menuBundleIdentifier, "com.cleanr.menu")
+    }
+
+    // Regression coverage for issue #58 — "Crash On macOS 26.5.1".
+    //
+    // `openHelper(at:)` launches the menu-bar helper via
+    // `NSWorkspace.openApplication`, whose result is delivered off the main
+    // thread (LaunchServices' `com.apple.launchservices.open-queue`). The
+    // shipped 1.8.3 build handled that result in a main-actor-isolated
+    // completion closure; on the macOS 26 runtime the closure's main-actor
+    // executor assertion traps (SIGTRAP) the instant it fires off-main,
+    // crashing the app. The fix awaits the async overload so the continuation
+    // resumes on the main actor.
+    //
+    // This drives that path with a URL that can't be opened: the launch fails,
+    // the failure lands in `lastError`, and — the point of the test — the
+    // process does NOT trap. On macOS 26, a regression to off-main `@MainActor`
+    // access in this path would abort the test process instead of failing soft.
+    func testOpenHelperRecordsFailureWithoutTrappingOffMainActor() async {
+        let launcher = MenuBarLauncher.shared
+        defer { launcher.lastError = nil }   // don't pollute the shared singleton
+
+        let bogus = URL(fileURLWithPath:
+            "/private/var/empty/CleanRMenu-\(UUID().uuidString).app")
+        await launcher.openHelper(at: bogus)
+
+        // Reaching this line at all proves we survived the off-main hop.
+        XCTAssertNotNil(launcher.lastError,
+                        "A failed helper launch should surface via lastError")
+    }
+
+    /// A failed helper launch must stay silent. LaunchServices' default is to
+    /// ask CoreServicesUIAgent to show a Finder "The file can't be found."
+    /// alert, so the test above put one on screen every time the suite ran,
+    /// and a user whose helper went missing would get the same mystery alert.
+    func testHelperLaunchNeverPromptsTheUser() {
+        let config = MenuBarLauncher.helperOpenConfiguration()
+        XCTAssertFalse(config.promptsUserIfNeeded, "a failed launch must not show a Finder alert")
+        XCTAssertFalse(config.activates, "the helper must not steal focus from the main app")
+    }
+
+    func testHelperUsesKeepOneInstancePolicyNotMutualExit() throws {
+        let src = try String(contentsOf: sourceURL("Sources/CleanRMenu/CleanRMenuApp.swift"), encoding: .utf8)
+        XCTAssertTrue(
+            src.contains("MenuBarInstancePolicy.shouldExitAsDuplicate"),
+            "Helper must keep exactly one instance (issue #138), not exit whenever any sibling exists"
+        )
+        XCTAssertFalse(
+            src.contains("let duplicate = NSWorkspace"),
+            "The mutual-exit check must not come back"
+        )
+    }
+
+    func testQuitMonitorSetsSharedUserQuitFlag() throws {
+        let src = try String(contentsOf: sourceURL("Sources/CleanRMenu/CleanRMenuApp.swift"), encoding: .utf8)
+        XCTAssertTrue(
+            src.contains("MenuBarKeepAlive.setUserQuit(true"),
+            "Quit Monitor must set the shared user-quit flag so the watchdog does not immediately relaunch"
+        )
+    }
+
+    func testLauncherReconcilesThroughKeepAlivePolicy() throws {
+        let src = try String(contentsOf: sourceURL("Sources/CleanR/Services/MenuBarLauncher.swift"), encoding: .utf8)
+        XCTAssertTrue(src.contains("MenuBarKeepAlivePolicy.action"))
+        XCTAssertTrue(src.contains("didTerminateApplicationNotification"))
+        XCTAssertTrue(
+            src.contains("Task { @MainActor in"),
+            "Terminate observer must hop to the main actor; do not reintroduce an off-main completion handler (issue #58)"
+        )
+        XCTAssertTrue(src.contains("ensureHelperRunningIfPreferred"))
+        XCTAssertFalse(
+            src.contains("launchHelperIfNotRunning"),
+            "Direct open-without-wait must not race SMAppService"
+        )
+        let appSrc = try String(contentsOf: sourceURL("Sources/CleanR/App/CleanRApp.swift"), encoding: .utf8)
+        XCTAssertTrue(
+            appSrc.contains("startWatchingHelperTermination"),
+            "Main app must start the helper-termination watchdog at launch"
+        )
+    }
+
+    private func sourceURL(_ relative: String) -> URL {
+        URL(filePath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appending(path: relative)
+    }
+}

@@ -1,0 +1,73 @@
+name: CI
+
+# Build + test on PRs (and on demand). We deliberately do NOT run on push to
+# main: main is the product of already-tested PRs, and the Release workflow
+# re-tests before it signs and notarizes a tag. This avoids a redundant build
+# on every merge.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Verify VERSION ↔ MCConstants.appVersion sync
+        run: bash scripts/check-version-sync.sh
+
+      - name: Build
+        run: swift build
+
+      - name: Verify network surface (inspect the built binary)
+        run: bash scripts/check-network-surface.sh
+
+      - name: Run Tests (XCTest with code coverage)
+        run: swift test --enable-code-coverage
+
+      - name: Sanity-check coverage report exists
+        run: |
+          PROF=$(find .build -name '*.profdata' | head -1)
+          if [ -z "$PROF" ]; then
+            echo "::error::No coverage profile found — coverage instrumentation may have broken"
+            exit 1
+          fi
+          echo "Coverage profile: $PROF"
+
+      - name: Smoke test for safety-critical files
+        run: |
+          # Verify the safety-critical files exist and have substantial test coverage.
+          # This is a heuristic guard: if SafetyGuard.swift or PlistJunkFilter.swift
+          # disappear, or if their tests vanish, this step fails loudly.
+          test -f Sources/CleanRKit/SafetyGuard.swift || { echo "::error::SafetyGuard.swift missing"; exit 1; }
+          test -f Sources/CleanRKit/PlistJunkFilter.swift || { echo "::error::PlistJunkFilter.swift missing"; exit 1; }
+          test -f Tests/CleanRKitTests/SafetyGuardTests.swift || { echo "::error::SafetyGuard tests missing"; exit 1; }
+          test -f Tests/CleanRKitTests/PlistJunkFilterTests.swift || { echo "::error::PlistJunkFilter tests missing"; exit 1; }
+          test -f Tests/CleanRTests/CleaningEngineTests.swift || { echo "::error::CleaningEngine tests missing"; exit 1; }
+          echo "All safety-critical test files present."
+
+  # Secrets are covered by GitHub secret scanning and push protection, which
+  # recognize real credential formats. The network surface is checked against
+  # the built binary in Build & Test (scripts/check-network-surface.sh).
+  security-audit:
+    name: Security Audit
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check SafetyGuard integrity
+        run: |
+          echo "Verifying SafetyGuard protections..."
+          grep -c "protectedPaths\|isProtected\|safePrefixes" Sources/CleanRKit/SafetyGuard.swift
+          UNSAFE=$(grep -rn "removeItem\|trashItem" Sources/CleanR/ --include="*.swift" | grep -v "SafetyGuard\|CleaningEngine\|SecureEraser\|MaintenanceModule\|UninstallerView\|dryRun\|// " | grep -v "Test" || true)
+          if [ -n "$UNSAFE" ]; then
+            echo "::warning::File deletion found outside SafetyGuard/CleaningEngine/Shredder:"
+            echo "$UNSAFE"
+          fi
+          echo "SafetyGuard checks passed."
