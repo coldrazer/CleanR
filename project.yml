@@ -24,14 +24,23 @@ settings:
     ONLY_ACTIVE_ARCH: "NO"
     CODE_SIGN_IDENTITY: "Apple Development"
     CODE_SIGN_STYLE: "Automatic"
+    # Select the Apex Studio LLC team in Xcode (Signing & Capabilities)
+    # or set DEVELOPMENT_TEAM here. Left empty so no personal team is
+    # committed to the repo.
     DEVELOPMENT_TEAM: ""
     PRODUCT_BUNDLE_IDENTIFIER: "com.cleanr.app"
     CODE_SIGN_ENTITLEMENTS: "CleanR.entitlements"
     GENERATE_INFOPLIST_FILE: "YES"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+  configs:
+    Release:
+      # Required for Developer ID signing + notarization.
+      ENABLE_HARDENED_RUNTIME: "YES"
 
 packages:
   CleanR:
-    path: ./Package.swift
+    path: .
 
 targets:
   CleanR:
@@ -39,7 +48,8 @@ targets:
     platform: macOS
     sources: []
     dependencies:
-      - package: CleanR/CleanR
+      - package: CleanR
+        product: CleanR
     settings:
       base:
         PRODUCT_NAME: CleanR
@@ -58,7 +68,8 @@ targets:
     platform: macOS
     sources: []
     dependencies:
-      - package: CleanR/CleanRMenu
+      - package: CleanR
+        product: CleanRMenu
     settings:
       base:
         PRODUCT_NAME: CleanRMenu
